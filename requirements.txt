@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+httpx
+# paramiko 5.x 彻底移除了 ssh-rsa（SHA1），路由器的 dropbear 只提供 ssh-rsa
+paramiko<5
+PyYAML
+python-dotenv

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="glass" data-mode="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ClashHub</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<!-- 主题背景场景层（液态玻璃折射的源、海浪、扫描线、水墨等都画在这里） -->
+<div class="scene" aria-hidden="true">
+  <span class="scene-a"></span>
+  <span class="scene-b"></span>
+  <span class="scene-c"></span>
+  <span class="scene-d"></span>
+</div>
+
+<!-- 液态玻璃折射滤镜：feTurbulence 生成低频噪声，feDisplacementMap 据此对背景做轻微透镜化位移 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="liquid-glass" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.009" numOctaves="2" seed="11" result="n"/>
+    <feGaussianBlur in="n" stdDeviation="1.4" result="nb"/>
+    <feDisplacementMap in="SourceGraphic" in2="nb" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="container">
+  <div id="view"></div>
+</main>
+<div id="toast" class="toast"></div>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

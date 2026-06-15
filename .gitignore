@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+data/
+# 配置文件包含节点密钥，不进版本库
+Router.yaml
+Company.yaml
