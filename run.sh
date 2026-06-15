@@ -40,17 +40,63 @@ ok()   { printf '%s[ClashHub] ✓ %s%s\n'    "$C_GRN" "$*"  "$C_RESET"; }
 warn() { printf '%s[ClashHub] ! %s%s\n'    "$C_YEL" "$*"  "$C_RESET" >&2; }
 err()  { printf '%s[ClashHub] ✗ %s%s\n'    "$C_RED" "$*"  "$C_RESET" >&2; }
 
-# ---------- 前置检查 ----------
+# ---------- 前置检查 / 自动安装 ----------
 
-if [[ ! -x "$UVICORN" ]]; then
-    err "找不到 $UVICORN — venv 未建好。请先："
-    err "    python3 -m venv venv && ./venv/bin/pip install -r requirements.txt"
-    exit 1
-fi
 if [[ ! -f app/main.py ]]; then
     err "找不到 app/main.py — 请在项目根目录运行此脚本（当前 $SCRIPT_DIR）"
     exit 1
 fi
+
+# 1. venv：缺失就自动建并装依赖
+ensure_venv() {
+    if [[ -x "$UVICORN" ]]; then return 0; fi
+    if ! command -v python3 >/dev/null 2>&1; then
+        err "找不到 python3，请先安装：apt install python3 python3-venv  /  yum install python3"
+        exit 1
+    fi
+    log "venv 不存在，自动创建..."
+    if ! python3 -m venv venv 2>/tmp/clashhub-venv.err; then
+        err "venv 创建失败："; cat /tmp/clashhub-venv.err >&2
+        err "Debian/Ubuntu 上可能要先：apt install python3-venv"
+        exit 1
+    fi
+    log "venv 已建好，安装依赖（首次会下载几十 MB，请耐心）..."
+    ./venv/bin/pip install -q --disable-pip-version-check --upgrade pip
+    if ! ./venv/bin/pip install -q --disable-pip-version-check -r requirements.txt; then
+        err "依赖安装失败，请检查网络或代理设置"
+        exit 1
+    fi
+    ok "依赖安装完成"
+}
+
+# 2. .env：缺失就从样例复制，提示编辑后再跑
+ensure_env() {
+    if [[ -f .env ]]; then return 0; fi
+    if [[ ! -f .env.example ]]; then
+        err "找不到 .env 也找不到 .env.example，请补齐配置文件"
+        exit 1
+    fi
+    cp .env.example .env
+    warn ".env 已从 .env.example 创建，但还未填路由器密码等"
+    warn "请先编辑：  vi .env       然后再运行：  ./run.sh"
+    exit 1
+}
+
+# 3. Clash 配置文件：缺失只警告，不阻拦启动
+check_clash_files() {
+    local missing=()
+    [[ -f Router.yaml ]]  || missing+=("Router.yaml")
+    [[ -f Company.yaml ]] || missing+=("Company.yaml")
+    if (( ${#missing[@]} > 0 )); then
+        warn "缺少 Clash 配置文件：${missing[*]}"
+        warn "服务仍会启动，但订阅链接和规则编辑会报错"
+        warn "请从开发机拷过来，例如：  scp dev:/path/to/Router.yaml ./"
+    fi
+}
+
+ensure_venv
+ensure_env
+check_clash_files
 
 mkdir -p data
 
