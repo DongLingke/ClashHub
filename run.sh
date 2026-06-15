@@ -5,6 +5,16 @@
 #   HOST=127.0.0.1 PORT=5010 ./run.sh   # 自定义监听
 #
 # 启动成功 退出码 0；失败 退出码 1，并打印最近的日志。
+
+# 被 sh / dash / ash 调用时自动改用 bash 重新执行（pipefail 等是 bashism）
+if [ -z "${BASH_VERSION:-}" ]; then
+    if command -v bash >/dev/null 2>&1; then
+        exec bash "$0" "$@"
+    fi
+    echo "需要 bash 才能运行 run.sh，请先安装 bash 或直接用 ./run.sh" >&2
+    exit 1
+fi
+
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
